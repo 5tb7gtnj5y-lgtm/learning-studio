@@ -5,7 +5,7 @@ compatibility_date = "2026-10-20"
 [[d1_databases]]
 binding = "DB"
 database_name = "learning-studio-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "03887967-b056-4d27-bd53-fc3f14eac482"
 
 [[rules]]
 type = "Text"
