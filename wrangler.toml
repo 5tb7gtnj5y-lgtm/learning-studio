@@ -1,0 +1,13 @@
+name = "learning-studio"
+main = "src/index.js"
+compatibility_date = "2026-10-20"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "learning-studio-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = true
