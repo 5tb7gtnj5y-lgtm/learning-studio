@@ -33,3 +33,4 @@ Local D1 schema initialisation: `npm run db:local`.
 - Uploaded images are stored as small data URIs inside course JSON (600 KB per image), so avoid large images.
 - This is an initial version, not production security-audited, nor fully accessibility-tested.
 - Knowledge checks are optional one-question blocks with feedback, not formal scored assessments.
+
