@@ -15,6 +15,22 @@ function id(){return crypto.randomUUID()}
 function emptyCourse(){return {title:'Untitled learning',pages:[{id:id(),title:'Welcome',blocks:[{id:id(),type:'text',text:'Welcome to your new learning package.'}],link:'next'}]}}
 function validateCourse(c){return c&&typeof c.title==='string'&&c.title.length<=150&&Array.isArray(c.pages)&&c.pages.length<=100&&c.pages.every(p=>p&&typeof p.id==='string'&&typeof p.title==='string'&&p.title.length<=150&&Array.isArray(p.blocks)&&p.blocks.length<=100)}
 async function readBody(request){if(Number(request.headers.get('content-length')||0)>4_000_000)throw Error('Project exceeds 4 MB');const text=await request.text();if(text.length>4_000_000)throw Error('Project exceeds 4 MB');return JSON.parse(text)}
+
+const REVIEW_DDL=[
+'CREATE TABLE IF NOT EXISTS review_links (id TEXT PRIMARY KEY, course_id TEXT NOT NULL, token_hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, revoked_at TEXT)',
+'CREATE INDEX IF NOT EXISTS review_links_course_idx ON review_links(course_id)',
+'CREATE TABLE IF NOT EXISTS review_comments (id TEXT PRIMARY KEY, link_id TEXT NOT NULL, course_id TEXT NOT NULL, page_id TEXT NOT NULL, block_id TEXT, author TEXT NOT NULL, body TEXT NOT NULL, status TEXT NOT NULL DEFAULT \'open\', created_at TEXT NOT NULL, resolved_at TEXT)',
+'CREATE INDEX IF NOT EXISTS review_comments_course_idx ON review_comments(course_id,created_at)'
+];
+async function ensureReviews(env){await env.DB.batch(REVIEW_DDL.map(sql=>env.DB.prepare(sql)))}
+function validId(s){return /^[0-9a-f-]{36}$/i.test(s||'')}
+async function validReviewLink(env,token){
+ if(!/^[0-9a-f]{64}$/i.test(token||''))return null;
+ const hashed=hex(await digest(token.toLowerCase()));
+ const link=await env.DB.prepare('SELECT id,course_id,expires_at FROM review_links WHERE token_hash=? AND revoked_at IS NULL').bind(hashed).first();
+ return link&&Date.parse(link.expires_at)>Date.now()?link:null;
+}
+
 export default {async fetch(request,env){
  try{
  const url=new URL(request.url),path=url.pathname,method=request.method;
@@ -35,8 +51,69 @@ export default {async fetch(request,env){
  if(pub&&method==='GET'){
   const item=await env.DB.prepare('SELECT published_json FROM courses WHERE id=?').bind(pub[1]).first();return item?.published_json?json(JSON.parse(item.published_json)):fail('Learning not found',404);
  }
+
+ // Review links are capability URLs: a long random secret is required to read an unpublished draft.
+ const reviewMatch=path.match(/^\/api\/review\/([0-9a-f]{64})(?:\/comments)?$/i);
+ if(reviewMatch){
+  if(!['GET','POST'].includes(method))return fail('Method not allowed',405);
+  await ensureReviews(env);
+  const link=await validReviewLink(env,reviewMatch[1]);if(!link)return fail('This review link has expired or been disabled',404);
+  const record=await env.DB.prepare('SELECT draft_json FROM courses WHERE id=?').bind(link.course_id).first();
+  if(!record)return fail('This learning package is unavailable',404);
+  const draft=JSON.parse(record.draft_json);
+  if(path.endsWith('/comments')&&method==='POST'){
+   const b=await readBody(request),author=typeof b.author==='string'?b.author.trim():'',body=typeof b.body==='string'?b.body.trim():'';
+   if(author.length<1||author.length>60||body.length<1||body.length>2000)return fail('Enter your name (up to 60 characters) and feedback (up to 2,000 characters)');
+   if(!validId(b.pageId)||!(draft.pages||[]).some(p=>p.id===b.pageId))return fail('Choose a valid page');
+   const p=draft.pages.find(p=>p.id===b.pageId),blockId=b.blockId==null?null:b.blockId;
+   if(blockId!==null&&(!validId(blockId)||!(p.blocks||[]).some(x=>x.id===blockId)))return fail('Choose a valid section');
+   const count=await env.DB.prepare('SELECT COUNT(*) AS n FROM review_comments WHERE link_id=?').bind(link.id).first();
+   if(Number(count?.n||0)>=500)return fail('This review has reached its feedback limit',429);
+   const commentId=id(),now=new Date().toISOString();
+   await env.DB.prepare('INSERT INTO review_comments(id,link_id,course_id,page_id,block_id,author,body,status,created_at) VALUES(?,?,?,?,?,?,?,?,?)')
+    .bind(commentId,link.id,link.course_id,b.pageId,blockId,author,body,'open',now).run();
+   return json({ok:true,id:commentId},201);
+  }
+  if(!path.endsWith('/comments')&&method==='GET')return json({course:draft});
+  return fail('Not found',404);
+ }
  if(!path.startsWith('/api/'))return new Response('Not found',{status:404});
  if(!await auth(request,env))return reject();
+
+ const reviewLinkRoute=path.match(/^\/api\/courses\/([0-9a-f-]{36})\/review-link$/i);
+ const reviewsRoute=path.match(/^\/api\/courses\/([0-9a-f-]{36})\/reviews(?:\/([0-9a-f-]{36}))?$/i);
+ if(reviewLinkRoute||reviewsRoute){
+  await ensureReviews(env);
+  const courseId=(reviewLinkRoute||reviewsRoute)[1];
+  const row=await env.DB.prepare('SELECT id FROM courses WHERE id=?').bind(courseId).first();
+  if(!row)return fail('Learning package not found',404);
+  if(reviewLinkRoute&&method==='POST'){
+   // Generating a fresh link revokes the previous one. Never store bearer tokens in plain text.
+   const raw=hex(crypto.getRandomValues(new Uint8Array(32))),tokenHash=hex(await digest(raw)),now=new Date().toISOString();
+   const expires=new Date(Date.now()+30*24*60*60*1000).toISOString();
+   await env.DB.prepare('UPDATE review_links SET revoked_at=? WHERE course_id=? AND revoked_at IS NULL').bind(now,courseId).run();
+   await env.DB.prepare('INSERT INTO review_links(id,course_id,token_hash,created_at,expires_at) VALUES(?,?,?,?,?)').bind(id(),courseId,tokenHash,now,expires).run();
+   return json({url:new URL('/?review='+raw,url.origin).toString(),expires_at:expires});
+  }
+  if(reviewLinkRoute&&method==='DELETE'){
+   await env.DB.prepare('UPDATE review_links SET revoked_at=? WHERE course_id=? AND revoked_at IS NULL').bind(new Date().toISOString(),courseId).run();return json({ok:true});
+  }
+  if(reviewLinkRoute&&method==='GET'){
+   const link=await env.DB.prepare('SELECT created_at,expires_at,revoked_at FROM review_links WHERE course_id=? ORDER BY created_at DESC LIMIT 1').bind(courseId).first();
+   return json({active:!!link&&!link.revoked_at&&Date.parse(link.expires_at)>Date.now(),expires_at:link?.expires_at||null});
+  }
+  if(reviewsRoute&&method==='GET'&&!reviewsRoute[2]){
+   const comments=await env.DB.prepare('SELECT id,page_id,block_id,author,body,status,created_at,resolved_at FROM review_comments WHERE course_id=? ORDER BY created_at DESC LIMIT 500').bind(courseId).all();
+   return json({comments:comments.results});
+  }
+  if(reviewsRoute&&method==='PATCH'&&reviewsRoute[2]){
+   const b=await readBody(request);if(!['open','resolved'].includes(b.status))return fail('Choose open or resolved');
+   const time=b.status==='resolved'?new Date().toISOString():null;
+   const updated=await env.DB.prepare('UPDATE review_comments SET status=?,resolved_at=? WHERE id=? AND course_id=?').bind(b.status,time,reviewsRoute[2],courseId).run();
+   return updated.meta.changes?json({ok:true}):fail('Comment not found',404);
+  }
+  return fail('Method not allowed',405);
+ }
  if(path==='/api/courses'&&method==='GET'){
   const list=await env.DB.prepare('SELECT id,title,published_json IS NOT NULL AS published,updated_at FROM courses ORDER BY updated_at DESC').all();return json(list.results);
  }
