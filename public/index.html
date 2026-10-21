@@ -355,6 +355,63 @@ function wireCanvas(){
  });
 }
 
+let reviewStatus=null,adminComments=[],reviewIssuedUrl='',reviewFeedbackFilter='open',reviewToken='',reviewAnchor='none',reviewName='',reviewNotice='';
+function reviewLabelFor(comment){
+ const p=course.pages.find(x=>x.id===comment.page_id);
+ if(!p)return 'Deleted page';
+ if(!comment.block_id)return p.title+' — whole page';
+ const b=(p.blocks||[]).find(x=>x.id===comment.block_id);
+ return p.title+' — '+(b?(b.heading||b.type||'section'):'deleted section');
+}
+function reviewDate(ts){const date=new Date(ts);return isNaN(date.valueOf())?'':date.toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'})}
+async function reviewAdmin(){
+ if(!admin){return alert('Administrator login required')}
+ mode='feedback';normalizeCourse();setTheme();
+ const [link,results]=await Promise.all([api('/api/courses/'+window.courseId+'/review-link'),api('/api/courses/'+window.courseId+'/reviews')]);
+ reviewStatus=link;adminComments=results.comments||[];drawReviewAdmin();
+}
+function drawReviewAdmin(){
+ mode='feedback';const filtered=adminComments.filter(c=>reviewFeedbackFilter==='all'||c.status===reviewFeedbackFilter),openCount=adminComments.filter(c=>c.status==='open').length;
+ const share=reviewIssuedUrl?'<div class="review-link-box"><input readonly id="review-url" aria-label="Shareable draft review link" value="'+esc(reviewIssuedUrl)+'">'+button('Copy review link','reviewcopy',true)+'</div>':'<p class="muted">'+(reviewStatus?.active?'An active link exists. For security, its address is only shown when it is created. You can generate a new one if needed.':'No active review link yet.')+'</p>';
+ app.innerHTML=renderHeader()+'<main class="wrap" style="max-width:1080px"><section class="review-top"><h1>Review & feedback</h1><p><strong>'+esc(course.title)+'</strong> — share an unpublished draft for colleagues to review. Reviewers can read and comment, but cannot edit the learning.</p><div class="review-tools">'+button(reviewStatus?.active?'Generate replacement link':'Create review link','reviewcreate',true)+(reviewStatus?.active?button('Disable review link','reviewrevoke'):'')+'</div>'+share+'<p class="muted">Links expire after 30 days. Creating a replacement link disables the previous one. Save your draft before asking colleagues to review it; generating a link saves it automatically.</p>'+(reviewStatus?.active?'<p class="muted">Link expiry: '+esc(reviewDate(reviewStatus.expires_at))+'</p>':'')+'</section><div class="review-tools"><h2 style="margin-right:auto">Comments ('+adminComments.length+')</h2>'+[['open','Open ('+openCount+')'],['resolved','Resolved'],['all','All']].map(([val,label])=>'<button data-action="reviewfilter:'+val+'" aria-pressed="'+(reviewFeedbackFilter===val)+'" class="'+(reviewFeedbackFilter===val?'primary':'')+'">'+label+'</button>').join('')+'</div><div class="review-comment-list">'+(filtered.length?filtered.map(entry=>'<article class="review-comment" data-status="'+esc(entry.status)+'"><div class="review-tools"><strong>'+esc(entry.author)+'</strong><span class="review-pill">'+esc(entry.status==='resolved'?'Resolved':'Open')+'</span><span class="muted">'+esc(reviewDate(entry.created_at))+'</span></div><h3>'+esc(reviewLabelFor(entry))+'</h3><p>'+esc(entry.body)+'</p><div class="review-tools">'+button('Open in editor','reviewjump:'+entry.page_id+':'+(entry.block_id||'page'))+button(entry.status==='open'?'Mark resolved':'Reopen comment','reviewstatus:'+entry.id+':'+(entry.status==='open'?'resolved':'open'))+'</div></article>').join(''):'<div class="review-empty">No '+(reviewFeedbackFilter==='all'?'':' '+reviewFeedbackFilter)+' feedback to show.</div>')+'</div></main>';
+ wire();
+}
+async function createReviewLink(){
+ if(reviewStatus?.active&&!confirm('Create a new review link? Your previous review link will stop working.'))return;
+ await api('/api/courses/'+window.courseId,'PUT',course);
+ const result=await api('/api/courses/'+window.courseId+'/review-link','POST');
+ reviewIssuedUrl=result.url;await reviewAdmin();
+}
+async function revokeReviewLink(){
+ if(!confirm('Disable the current review link? Colleagues will no longer be able to open it or submit comments. Existing comments are kept.'))return;
+ await api('/api/courses/'+window.courseId+'/review-link','DELETE');reviewIssuedUrl='';await reviewAdmin();
+}
+async function copyReviewLink(){
+ const input=document.getElementById('review-url');if(!input)return;
+ try{await navigator.clipboard.writeText(input.value);alert('Review link copied.')}catch{input.focus();input.select();alert('The link is selected. Press Ctrl+C to copy it.')}
+}
+async function loadReviewer(token){
+ reviewToken=token;reviewAnchor='none';reviewNotice='';const result=await api('/api/review/'+encodeURIComponent(token));
+ course=result.course;normalizeCourse();activePage=menuId();reviewViewer();
+}
+function reviewCompose(){
+ return '<section class="review-compose" aria-label="Write a review comment"><h3>Leave feedback on this '+(reviewAnchor==='page'?'page':'section')+'</h3><label for="review-author">Your name</label><input id="review-author" maxlength="60" value="'+esc(reviewName)+'" placeholder="Your name" required><label for="review-body">Feedback</label><textarea id="review-body" maxlength="2000" rows="4" placeholder="What should be changed or improved?" required></textarea><div class="review-tools">'+button('Submit comment','reviewsend',true)+button('Cancel','reviewcancel')+'</div></section>';
+}
+function reviewViewer(){
+ mode='review';normalizeCourse();setTheme();
+ const p=page(),index=course.pages.findIndex(v=>v.id===activePage),total=Math.max(0,course.pages.length-1);
+ const pageComment=button('Comment on this page','reviewcomment:page');
+ const blocks=isMenu()?menuCards(false):(p.blocks||[]).map(b=>'<div class="review-section">'+renderBlock(b,false)+'<div class="review-annotate">'+button('Comment on this section','reviewcomment:'+b.id)+'</div>'+(reviewAnchor===b.id?reviewCompose():'')+'</div>').join('');
+ app.innerHTML=renderHeader()+'<main class="wrap" style="max-width:1150px"><section class="review-top"><h2>Review draft: '+esc(course.title)+'</h2><p>This is a draft for feedback, not the published course. Use the comment buttons to suggest changes. Your feedback goes to the learning author.</p></section><div class="review-toc">'+button('⌂ Menu','reviewmenu')+course.pages.filter(x=>x.id!==menuId()).map(x=>'<button data-action="reviewpage:'+esc(x.id)+'" aria-current="'+(x.id===activePage)+'">'+esc(x.title)+'</button>').join('')+'</div><article class="paper"><div class="editor-headline"><h1>'+esc(p.title)+'</h1>'+pageComment+'</div>'+(reviewNotice?'<p class="notice" role="status">'+esc(reviewNotice)+'</p>':'')+(reviewAnchor==='page'?reviewCompose():'')+blocks+(!isMenu()?'<div class="review-foot">'+button('← Back to menu','reviewmenu')+button(index<course.pages.length-1?'Next page →':'Back to menu →',index<course.pages.length-1?'reviewnext':'reviewmenu',true)+'</div>':'')+'</article></main>';
+ wire();
+}
+async function sendReviewComment(){
+ const author=document.getElementById('review-author')?.value.trim(),body=document.getElementById('review-body')?.value.trim();
+ if(!author||!body)return alert('Please enter your name and feedback.');
+ if(author.length>60||body.length>2000)return alert('Name or comment is too long.');
+ await api('/api/review/'+reviewToken+'/comments','POST',{author,body,pageId:activePage,blockId:reviewAnchor==='page'?null:reviewAnchor});
+ reviewName=author;reviewAnchor='none';reviewNotice='Feedback submitted. Thank you!';reviewViewer();
+}
 function edit(){
  mode='edit';normalizeCourse();setTheme();if(!course.pages.some(p=>p.id===activePage))activePage=menuId();
  const canvas=isMenu()?menuCards(true):'<div class="editor-intro"><span>Build your page here. Select a section to edit it, or use + Add section between sections.</span>'+button('Starter layouts','templates')+'</div>'+inlineSectionList()+(templatePanelOpen?templatePalette():'');
