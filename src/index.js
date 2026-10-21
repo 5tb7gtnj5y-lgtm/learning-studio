@@ -34,7 +34,7 @@ async function validReviewLink(env,token){
 export default {async fetch(request,env){
  try{
  const url=new URL(request.url),path=url.pathname,method=request.method;
- if(path==='/'&&method==='GET')return new Response(html,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff','content-security-policy':"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src https://*.sharepoint.com https://*.microsoft.com https://web.microsoftstream.com; connect-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'"}});
+ if(path==='/'&&method==='GET')return new Response(html,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','content-security-policy':"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src https://*.sharepoint.com https://*.microsoft.com https://web.microsoftstream.com; connect-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'"}});
  if(path==='/api/session'&&method==='GET')return json({admin:await auth(request,env)});
  if(path==='/api/login'&&method==='POST'){
   if(!env.ADMIN_PASSWORD||!env.SESSION_SECRET)return fail('Server secrets are not configured',503);
