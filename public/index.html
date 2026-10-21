@@ -35,7 +35,48 @@
 body[data-theme="midnight"] .interact{color:#1f3654}
 body[data-theme="midnight"] .block-library{background:#24374f}
 @media(max-width:700px){.block-library{grid-template-columns:repeat(2,minmax(0,1fr))}.gallery-block{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.lesson-text{line-height:1.75;font-size:16px}.lesson-text p{margin:8px 0 14px}.lesson-text h2{font-size:25px;margin:22px 0 12px}.lesson-text h3{font-size:20px;margin:18px 0 10px}.lesson-text h4{font-size:17px;margin:16px 0 8px}.lesson-text li{margin:7px 0}.text-gap{height:8px}.editor-formatbar{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.editor-formatbar button{font-size:12px;border:1px solid #d1dded}.content-table{border-collapse:collapse;width:100%;font-size:15px}.content-table th,.content-table td{border:1px solid #d7e0ee;padding:13px;text-align:left}.content-table th{background:#e9f0fd}.content-table tr:nth-child(even){background:#f8fbff}</style></head><body><div id="app"></div><div id="startup-status" style="margin:24px auto;max-width:740px;padding:20px;background:white;border:1px solid #dde5f2;border-radius:12px;color:#233957;font:16px system-ui">Loading Learning Studio… <span style="color:#607086">If this message stays visible, the application has not started correctly.</span></div><script>
+.lesson-text{line-height:1.75;font-size:16px}.lesson-text p{margin:8px 0 14px}.lesson-text h2{font-size:25px;margin:22px 0 12px}.lesson-text h3{font-size:20px;margin:18px 0 10px}.lesson-text h4{font-size:17px;margin:16px 0 8px}.lesson-text li{margin:7px 0}.text-gap{height:8px}.editor-formatbar{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.editor-formatbar button{font-size:12px;border:1px solid #d1dded}.content-table{border-collapse:collapse;width:100%;font-size:15px}.content-table th,.content-table td{border:1px solid #d7e0ee;padding:13px;text-align:left}.content-table th{background:#e9f0fd}.content-table tr:nth-child(even){background:#f8fbff}
+/* Canvas-first visual editing */
+.editor-canvas{max-width:1050px;width:100%;margin:0 auto}
+.editor-canvas .block{position:relative;border:1px solid #dce4ef;border-radius:14px;transition:border-color .16s,box-shadow .16s}
+.editor-canvas .block.active{outline:0;border:2px solid #2d67cb;box-shadow:0 8px 25px #2459a51c}
+.editor-canvas .block:hover{border-color:#7e9ece}
+.editor-canvas .block .toolbar{align-items:center;justify-content:flex-end;gap:5px;margin:-4px 0 10px}
+.editor-canvas .block .toolbar button{background:#f0f5fc;border-radius:7px;padding:7px 9px}
+.editor-canvas .block .toolbar button:hover{background:#dceaff}
+.editor-canvas .block .toolbar small{background:#eff4fc;border-radius:6px;padding:5px 7px;color:#46648a}
+.editor-title{border:1px solid transparent;border-radius:9px;padding:8px 10px;margin:6px -10px 12px;width:calc(100% + 20px);font-size:28px;font-weight:750;color:inherit;background:transparent}
+.editor-title:hover,.editor-title:focus{background:#f3f8ff;border-color:#bed2ee}
+.editor-title:focus{outline:2px solid #2563c8}
+.canvas-inline-edit{display:block;width:100%;min-height:100px;line-height:1.65;padding:12px 14px;border:1px solid #bad0e7;background:#fbfdff;resize:vertical;color:#20375f}
+.canvas-inline-label{display:block;margin:8px 0 5px;color:#456187;font-size:12px;font-weight:700}
+.canvas-hint{color:#617998;font-size:12px;margin:9px 0}
+.canvas-hint code{background:#edf3fe;padding:2px 4px;border-radius:4px}
+.canvas-edit-panel{margin-top:14px;padding:15px;background:#f3f8ff;border:1px solid #d3e1f5;border-radius:12px}
+.canvas-edit-panel input,.canvas-edit-panel textarea,.canvas-edit-panel select{width:100%;max-width:100%;margin:5px 0}
+.canvas-edit-panel input[type=checkbox],.canvas-edit-panel input[type=radio]{width:auto}
+.canvas-edit-panel h4{margin:6px 0 12px}
+.canvas-editor-row{background:white;border:1px solid #d9e4ef;border-radius:9px;padding:10px;margin:8px 0}
+.canvas-editor-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+.insert-zone{display:flex;align-items:center;justify-content:center;gap:12px;padding:5px 0;position:relative;min-height:30px}
+.insert-zone:before,.insert-zone:after{content:'';height:1px;background:#cedef0;flex:1}
+.insert-zone button{border:1px dashed #aac5eb;color:#215dbb;background:#f8fbff;border-radius:50px;padding:6px 16px;font-weight:650}
+.insert-zone button:hover{background:#dbeaff}
+.quick-add-panel{margin:14px 0 22px;padding:18px;background:#f4f8ff;border:1px solid #bfd2ef;border-radius:16px}
+.quick-add-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.quick-add-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.quick-add-tabs button[aria-pressed=true]{background:#205dc5;color:white}
+.quick-add-panel .block-library{padding:4px 0;border:0;background:transparent;grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+.quick-add-panel .block-library button{border:1px solid #d9e5f3;box-shadow:0 3px 8px #17447110;display:block}
+.quick-add-panel .block-library button strong{display:block;margin:7px 0 4px}
+.quick-add-icon{font-size:23px;line-height:1.2;display:inline-block}
+.editor-intro{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:#f0f6ff;padding:10px 15px;border:1px solid #d7e5f7;border-radius:10px;margin-bottom:18px}
+.editor-intro span{font-size:13px;color:#526c8f}
+.editor-headline{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.editor-empty{padding:38px 20px;text-align:center;background:#f6f9fd;border-radius:12px;border:2px dashed #c3d5ee}
+.editor-empty h2{margin-bottom:6px}
+@media(max-width:700px){.quick-add-panel .block-library{grid-template-columns:repeat(2,minmax(0,1fr))}.canvas-inline-edit{font-size:16px}}
+</style></head><body><div id="app"></div><div id="startup-status" style="margin:24px auto;max-width:740px;padding:20px;background:white;border:1px solid #dde5f2;border-radius:12px;color:#233957;font:16px system-ui">Loading Learning Studio… <span style="color:#607086">If this message stays visible, the application has not started correctly.</span></div><script>
 window.addEventListener('error',function(e){let el=document.getElementById('startup-status');if(el){el.innerHTML='<strong>Learning Studio could not start.</strong><p>'+String(e.message||'Unknown browser error').replace(/[<>]/g,'')+'</p><p>Please send a screenshot of this message.</p>';}});
 window.addEventListener('unhandledrejection',function(e){let el=document.getElementById('startup-status');if(el){el.textContent='Learning Studio error: '+String(e.reason?.message||e.reason||'Unknown error');}});
 </script><script>
@@ -97,7 +138,8 @@ if(b.type==='video')x=b.url&&streamUrl(b.url)?`<iframe class="video" src="${esc(
 if(b.type==='info')x=`<div class="info"><strong>${esc(b.heading||'Key point')}</strong><p>${esc(b.text)}</p></div>`;
 if(b.type==='quiz'){const q=b.questions[0];x=`<div class="quiz"><strong>${esc(q.prompt)}</strong>${q.options.map((op,i)=>`<label><input type="${q.multiple?'checkbox':'radio'}" name="q_${b.id}" value="${i}" ${edit?'disabled':''}>${esc(op)}</label>`).join('')}${edit?'<p class="muted">Optional knowledge check — learners can always continue.</p>':button('Check answer','check:'+b.id,true)+`<div role="status" id="feedback_${b.id}"></div>`}</div>`}
 if(['divider','quote','statement','accordion','flashcards','tabs','timeline','process','checklist','scenario','gallery','linkbutton','table','code'].includes(b.type))x=renderExtra(b,edit);
-return `<div class="block ${edit&&activeBlock===b.id?'active':''}" ${edit?'draggable="true" data-drag="'+b.id+'"':''}>${edit?`<div class="toolbar"><small style="margin-right:auto">⋮⋮ ${esc(b.type)}</small>${button('Edit','select:'+b.id)}${button('Copy','duplicate:'+b.id)}${button('Delete','remove:'+b.id)}</div>`:''}${x}</div>`}
+if(edit&&activeBlock===b.id&&b.type==='text')x='<label class="canvas-inline-label">Edit text on this page</label><textarea class="canvas-inline-edit" data-canvas-field="text" placeholder="Write your content here…">'+esc(b.text||'')+'</textarea><p class="canvas-hint">Try # Heading, - bullet points, **bold** or *italics*. Changes preview when you finish editing.</p>';
+return `<div class="block ${edit&&activeBlock===b.id?'active':''}" ${edit?'draggable="true" data-drag="'+b.id+'"':''}>${edit?`<div class="toolbar"><small style="margin-right:auto">⋮⋮ ${esc(b.type)}</small>${button('✎ Edit','select:'+b.id)}${button('↑','moveblock:'+b.id+':-1')}${button('↓','moveblock:'+b.id+':1')}${button('Duplicate','duplicate:'+b.id)}${button('Delete','remove:'+b.id)}</div>`:''}${x}${edit&&activeBlock===b.id&&b.type!=='text'?quickEditor(b):''}</div>`}
 async function home(){mode='home';const list=await api('/api/published'),all=admin?await api('/api/courses'):[];app.innerHTML=renderHeader()+`<main class="wrap"><div class="hero"><h1>Build better learning</h1><p>Pages, media and optional knowledge checks — made simple.</p>${admin?button('+ New learning','create',true):''}</div>${admin?`<h2>Administrator dashboard</h2><p>Import a Learning Studio backup: <input type="file" accept="application/json,.json" id="import-json" aria-label="Import learning JSON backup"></p><div class="grid">${all.map(c=>`<article class="card"><h2>${esc(c.title)}</h2><p class="muted">${c.published?'Published':'Draft'}</p>${button('Edit','open:'+c.id,true)} ${button('Duplicate','duplicatecourse:'+c.id)+button('Delete','delete:'+c.id)}</article>`).join('')||'<p>No courses yet.</p>'}</div>`:''}<h2>Published learning</h2><div class="grid">${list.map(c=>`<article class="card"><h2>${esc(c.title)}</h2>${button('Start learning','learn:'+c.id,true)}</article>`).join('')||'<p>No published learning yet.</p>'}</div></main>`;wire();const uploader=document.getElementById('import-json');if(uploader)uploader.onchange=async()=>{try{await importCourse(uploader.files[0])}catch(e){alert(e.message)}}}
 function extraProperties(b){
  const t=b.type;
@@ -132,6 +174,15 @@ if(b.type==='quiz'){const q=b.questions[0];out+=field('Question','prompt',q.prom
 return out}
 function field(label,name,value='',multiline=false){return `<div class="field"><label>${esc(label)}</label>${multiline?`<textarea data-bprop="${name}">${esc(value)}</textarea>`:`<input data-${name==='courseTitle'||name==='pageTitle'?'prop':'bprop'}="${name}" value="${esc(value||'')}">`}</div>`}
 let blockPickerOpen=false;
+let insertPosition=0,addCategory='All';
+const categoryOf={text:'Essentials',image:'Essentials',info:'Essentials',video:'Media',gallery:'Media',quote:'Essentials',statement:'Essentials',divider:'Essentials',table:'Essentials',code:'Essentials',accordion:'Interactions',tabs:'Interactions',flashcards:'Interactions',timeline:'Interactions',process:'Interactions',checklist:'Interactions',scenario:'Interactions',linkbutton:'Navigation',quiz:'Knowledge checks'};
+const blockIcon={text:'¶',image:'▧',video:'▶',info:'ⓘ',quote:'❝',statement:'★',divider:'━',table:'▦',code:'⌘',accordion:'▤',tabs:'▣',flashcards:'▣',timeline:'◉',process:'➜',checklist:'☑',scenario:'⇄',gallery:'▥',linkbutton:'↗',quiz:'?'};
+function betweenSections(position){return '<div class="insert-zone">'+button('+ Add section','addat:'+position)+'</div>';}
+function insertPanel(){
+ const options=['All','Essentials','Media','Interactions','Knowledge checks','Navigation'];
+ const chosen=blockCatalog().filter(([id])=>addCategory==='All'||categoryOf[id]===addCategory);
+ return '<div class="quick-add-panel"><div class="quick-add-title"><div><strong>Choose your next section</strong><div class="muted">Click a block to add it in this exact position.</div></div>'+button('Close','cancelpicker')+'</div><div class="quick-add-tabs">'+options.map(x=>'<button aria-pressed="'+(x===addCategory)+'" data-action="addcategory:'+x+'">'+esc(x)+'</button>').join('')+'</div><div class="block-library">'+chosen.map(([key,label,desc])=>'<button data-action="insert:'+key+'"><span class="quick-add-icon">'+(blockIcon[key]||'+')+'</span><strong>'+esc(label)+'</strong><small>'+esc(desc)+'</small></button>').join('')+'</div><h3 style="margin:15px 0 5px">Or use a ready-made layout</h3>'+templatePalette()+'</div>';
+}
 function blockCatalog(){
  return [
  ['text','Text','Headings, bold text and lists'],
@@ -155,9 +206,8 @@ function blockCatalog(){
  ['quiz','Knowledge check','Optional question and feedback']
  ];
 }
-function blockPalette(){
- return '<section class="block-library" aria-label="Choose content block">'+blockCatalog().map(([key,label,description])=>'<button type="button" data-action="insert:'+key+'"><strong>'+esc(label)+'</strong><small>'+esc(description)+'</small></button>').join('')+'</section>'+button('Cancel','cancelpicker');
-}
+function blockPalette(){return insertPanel()}
+
 function createStarterBlock(type){
  const b={id:uid(),type,text:'',heading:'',layout:'full',url:''};
  if(type==='text')b.text='Enter your learning content.';
