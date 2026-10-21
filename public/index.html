@@ -321,8 +321,8 @@ function inlineSectionList(){
 }
 function insertionSlot(index){return betweenSections(index)+(blockPickerOpen&&insertPosition===index?insertPanel():'')}
 function wireCanvas(){
- document.querySelectorAll('[data-canvas-field]').forEach(el=>el.onchange=()=>{const b=currentBlock();if(!b)return;b[el.dataset.canvasField]=el.value;edit()});
- document.querySelectorAll('[data-canvas-qfield]').forEach(el=>el.onchange=()=>{const q=currentBlock()?.questions?.[0];if(!q)return;q[el.dataset.canvasQfield]=el.value;edit()});
+ document.querySelectorAll('[data-canvas-field]').forEach(el=>el.oninput=()=>{const b=currentBlock();if(b)b[el.dataset.canvasField]=el.value});
+ document.querySelectorAll('[data-canvas-qfield]').forEach(el=>el.oninput=()=>{const q=currentBlock()?.questions?.[0];if(q)q[el.dataset.canvasQfield]=el.value});
  document.querySelectorAll('[data-canvas-qtype]').forEach(el=>el.onchange=()=>{const q=currentBlock()?.questions?.[0];if(!q)return;q.multiple=el.value==='multiple';q.correct=[0];edit()});
  document.querySelectorAll('[data-canvas-upload]').forEach(el=>el.onchange=()=>{
    const file=el.files?.[0];if(!file)return;if(!file.type.startsWith('image/')||file.size>600000)return alert('Please choose an image under 600 KB');
